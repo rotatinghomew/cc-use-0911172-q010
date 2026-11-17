@@ -6,6 +6,7 @@ import statistics
 from collections import Counter, defaultdict
 from typing import Any, Iterable, Mapping, Sequence
 from .audit import AuditVerifier
+from .metrics.realization import RealizationConfig, SkillRealizationAnalyzer
 from .storage import Database
 
 class Reporter:
@@ -43,3 +44,6 @@ class Reporter:
             if row['effective_to'] and row['effective_to']<row['effective_from']: issues.append({'id':row[f'{kind}_id'],'code':'reversed_period'})
             if int(row['quantity'])<0: issues.append({'id':row[f'{kind}_id'],'code':'negative_quantity'})
         return {'kind':kind,'records':len(rows),'issues':issues,'valid':not issues}
+    def skill_realization(self,dimensions:Mapping[str,Any]|None=None,window_months:int=3,as_of:Any=None) -> dict[str,Any]:
+        analyzer=SkillRealizationAnalyzer(RealizationConfig(window_months=window_months,as_of=as_of))
+        return analyzer.analyze(self.database.list_jobs(),self.database.list_trainings(),self.database.list_intents(),dimensions or {})
